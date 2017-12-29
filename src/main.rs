@@ -1,4 +1,5 @@
 #![feature(underscore_lifetimes)]
+#![feature(nll)]
 
 extern crate egg_mode;
 
@@ -26,7 +27,7 @@ fn main() {
     // until we get to the desired word count, keep looping
     while word_count < 100 {
         // print the current search_term so we can be sure it's being reassigned on each loop
-        println!("{:?}", search_term);
+        println!("INITIAL SEARCH TERM: {:?}", search_term);
 
         // search for tweets that include the search term, are not replies, retweets, media, or links
         // and are in English
@@ -37,7 +38,7 @@ fn main() {
 
         // find the first tweet that's not a reply or truncated and get its text
         // (the search filter doesn't appear to always remove all replies)
-        let tweet = &search_results.statuses.iter().find(|&toot| !&toot.text.contains("@") && !&toot.text.contains("t.co")).unwrap().text;
+        let tweet = &search_results.statuses.iter().find(|&toot| !&toot.text.contains("@") && !&toot.text.contains("t.co") && !final_tweets.contains(&toot.text)).unwrap().text;
 
         // push a clone of the tweet onto final_tweets
         final_tweets.push(tweet.clone());
@@ -51,14 +52,9 @@ fn main() {
 
         // reassign the value of the last word in the tweet to `search_term`
         search_term = last_word.unwrap();
-
-        println!("{:?}", search_term);
-        // print the current word count so we can be sure it's adding correctly
-        println!("{:?}", word_count);
     }
 
     // print out all the tweets
-
     for i in &final_tweets {
         println!("{:?}", i);
     }
