@@ -24,7 +24,6 @@ fn main() {
 
     // start with an empty vector that we will fill up with tweets
     let mut final_tweets = "".to_string();
-    let mut tweet_collection = vec![];
 
     // create an empty file
     let mut file = File::create("nanogenmo.txt");
@@ -35,7 +34,7 @@ fn main() {
     let handle = core.handle();
 
     // until we get to the desired word count, keep looping
-    while word_count < 10000 {
+    while word_count < 1000 {
         // print the current search_term so we can be sure it's being reassigned on each loop
         println!("INITIAL SEARCH TERM: {:?}", search_term);
 
@@ -43,26 +42,12 @@ fn main() {
         // and are in English
         let search_results = &core.run(search::search(search_term.to_string() + " -filter:replies -filter:retweets -filter:media -filter:links lang:en")
                                      .result_type(ResultType::Recent)
-                                     .count(100)
+                                     .count(50)
                                      .call(&config.token, &handle)).unwrap();
 
-        for status in &search_results.statuses {
-            tweet_collection.push(status.clone());
-        }
-
-        let mut tweet;
-
-        // first, pull from the tweet_collection so we don't have to make another API call
-        if tweet_collection.iter().any(|&toot|
-            !&toot.text.contains("@") &&
-            !&toot.text.contains("t.co") &&
-            !final_tweets.contains(&toot.text)) {
-            tweet = tweet_collection.iter().find(|&toot| !&toot.text.contains("@") && !&toot.text.contains("t.co") && !final_tweets.contains(&toot.text)).unwrap().text;
-        } else {
-            // find the first tweet that's not a reply or truncated and get its text
-            // (the search filter doesn't appear to always remove all replies)
-            tweet = search_results.statuses.iter().find(|&toot| !&toot.text.contains("@") && !&toot.text.contains("t.co") && !final_tweets.contains(&toot.text)).unwrap().text;
-        }
+        // find the first tweet that's not a reply or truncated and get its text
+        // (the search filter doesn't appear to always remove all replies)
+        let tweet = &search_results.statuses.iter().find(|&toot| !&toot.text.contains("@") && !&toot.text.contains("t.co") && !final_tweets.contains(&toot.text)).unwrap().text;
 
         // push a space onto final_tweets so they don't just run together
         final_tweets.push_str("\n");
@@ -87,8 +72,13 @@ fn main() {
         search_term = last_word.unwrap();
     }
 
-    file.unwrap().write_all(final_tweets.as_bytes());
+    let mut really_final_tweets = "".to_string();
 
-    // print out all the tweets
-    println!("{:?}", final_tweets);
+    // since API rate limiting is a thing, for now we are just repeating the first thousand words
+    // 50 times 
+    for i in 1..51 {
+        really_final_tweets.push_str(&final_tweets.clone());
+    }
+
+    file.unwrap().write_all(really_final_tweets.as_bytes());
 }
